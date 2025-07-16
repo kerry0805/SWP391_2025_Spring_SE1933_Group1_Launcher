@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" style="-fx-background-color: #1b2838;" stylesheets="@../styles/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.centurionlauncher.controller.LoginController">
+   <children>
+      <VBox alignment="TOP_CENTER" maxHeight="400.0" maxWidth="556.0" prefHeight="400.0" prefWidth="556.0" styleClass="login-panel">
+         <children>
+            <Label styleClass="title-label" text="Log in">
+               <font>
+                  <Font name="Arial Bold" size="32.0" />
+               </font>
+               <VBox.margin>
+                  <Insets bottom="30.0" />
+               </VBox.margin>
+            </Label>
+            <VBox maxWidth="300.0" spacing="5.0">
+               <children>
+                  <Label styleClass="field-label" text="USERNAME" />
+                  <TextField prefHeight="40.0" styleClass="input-field" fx:id="usernameField"/>
+                  <Label styleClass="field-label" text="PASSWORD">
+                     <VBox.margin>
+                        <Insets top="10.0" />
+                     </VBox.margin>
+                  </Label>
+                  <PasswordField prefHeight="40.0" styleClass="input-field" fx:id="passwordField"/>
+               </children>
+            </VBox>
+            <HBox alignment="CENTER" maxWidth="300.0" spacing="10.0">
+               <children>
+                  <Button mnemonicParsing="false" onAction="#handleLoginButtonAction" prefHeight="40.0" prefWidth="250.0" styleClass="login-button" text="Log in" HBox.hgrow="ALWAYS" fx:id="logInButton"/>
+                  <ImageView fitHeight="83.0" fitWidth="71.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../images/google.png" />
+                     </image>
+                  </ImageView>
+               </children>
+               <VBox.margin>
+                  <Insets top="20.0" />
+               </VBox.margin>
+            </HBox>
+            <Hyperlink prefHeight="43.0" prefWidth="115.0" styleClass="forgot-password-link" text="Forgot password?" />
+         </children>
+      </VBox>
+   </children>
+</StackPane>
