@@ -17,7 +17,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Pagination;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
@@ -31,18 +30,23 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ResourceBundle;
 
+/**
+ * Controller này bây giờ đóng vai trò là Controller chính,
+ * quản lý cả layout chính và lưới game.
+ */
 public class LibraryController implements Initializable {
 
+    // --- FXML Injections (Bao gồm các component từ layout chính và view lưới game)
+    // ---
     @FXML
-    private ImageView avatarImageView;
+    private BorderPane mainPane; // Component từ layout chính (library.fxml)
     @FXML
-    private Label usernameLabel;
+    private Label usernameLabel; // Component từ layout chính
     @FXML
-    private TilePane gameGrid;
+    private TilePane gameGrid; // Component được include từ gamegrid-view.fxml
     @FXML
-    private Pagination pagination;
+    private Pagination pagination; // Component được include từ gamegrid-view.fxml
 
-    // Sử dụng một instance duy nhất cho HttpClient và ObjectMapper
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -50,53 +54,84 @@ public class LibraryController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         if (AuthContext.getInstance().isAuthenticated()) {
             usernameLabel.setText(AuthContext.getInstance().getUsername());
-            // Bắt đầu tải dữ liệu ngay khi màn hình được khởi tạo
-            loadLibraryData();
+            loadLibraryData(0); // Tải dữ liệu cho trang đầu tiên
+            setupPagination();
         } else {
-            // Xử lý trường hợp người dùng chưa đăng nhập
+            // Xử lý nếu chưa đăng nhập
             usernameLabel.setText("Guest");
-            // Có thể hiển thị một thông báo yêu cầu đăng nhập
+            gameGrid.getChildren().add(new Label("Vui lòng đăng nhập để xem thư viện."));
         }
     }
 
-    private void loadLibraryData() {
+    private void setupPagination() {
+        pagination.currentPageIndexProperty().addListener((obs, oldIndex, newIndex) -> {
+            loadLibraryData(newIndex.intValue());
+        });
+    }
+
+    @FXML
+    void showGameGrid() {
+        try {
+            // Tải lại file FXML chứa lưới game và phân trang
+            Parent gameGridView = FXMLLoader
+                    .load(getClass().getResource("/com/centurionlauncher/fxml/gamegrid-view.fxml"));
+
+            this.gameGrid = (TilePane) gameGridView.lookup("#gameGrid");
+            this.pagination = (Pagination) gameGridView.lookup("#pagination");
+
+            if (this.gameGrid == null || this.pagination == null) {
+                System.err.println("Lỗi: Không tìm thấy #gameGrid hoặc #pagination trong gamegrid-view.fxml!");
+                return;
+            }
+
+            mainPane.setCenter(gameGridView);
+
+            loadLibraryData(0);
+            setupPagination();
+
+        } catch (IOException e) {
+            System.err.println("Lỗi khi tải lại gamegrid-view.fxml");
+            e.printStackTrace();
+        }
+    }
+
+    private void loadLibraryData(int pageNumber) {
+        gameGrid.getChildren().clear(); // Xóa các game cũ trước khi tải mới
+
+        String apiUrl = String.format("http://localhost:8080/user/library?page=%d&size=12", pageNumber);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/user/library")) // Thay đổi URL nếu cần
+                .uri(URI.create(apiUrl))
                 .header("Authorization", "Bearer " + AuthContext.getInstance().getToken())
                 .build();
 
-        // Gửi request bất đồng bộ và KHÔNG block luồng UI với .join()
         httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(HttpResponse::body)
-                .thenAccept(this::handleLibraryResponse) // Xử lý response
-                .exceptionally(error -> { // Xử lý lỗi nếu có
+                .thenAccept(this::processHttpResponse)
+                .exceptionally(error -> {
                     error.printStackTrace();
-                    Platform.runLater(() -> {
-                        Label errorLabel = new Label("Error fetching games");
-                        errorLabel.setStyle(
-                                "-fx-text-fill: #FF6B6B;" + "-fx-font-size: 16px;" + "-fx-font-weight: bold;");
-                        gameGrid.getChildren().add(errorLabel);
-                    });
+                    Platform.runLater(() -> showError("Lỗi kết nối đến server."));
                     return null;
                 });
+    }
 
+    private void processHttpResponse(HttpResponse<String> response) {
+        if (response.statusCode() == 200) {
+            handleLibraryResponse(response.body());
+        } else {
+            Platform.runLater(() -> {
+                showError("Lỗi từ server (Code: " + response.statusCode() + ")");
+                System.err.println("Error Body: " + response.body());
+            });
+        }
     }
 
     private void handleLibraryResponse(String responseBody) {
         try {
-            loadView("gamegrid-view");
-            // Phân tích chuỗi JSON thành đối tượng GamePage
             GamePage pageData = objectMapper.readValue(responseBody, GamePage.class);
-
-            // Mọi thao tác cập nhật giao diện phải được thực hiện trên luồng JavaFX
             Platform.runLater(() -> {
-                // Cấu hình thanh phân trang
                 pagination.setPageCount(pageData.getTotalPages());
-                // TODO: Thêm logic xử lý khi người dùng nhấn vào trang khác
+                pagination.setCurrentPageIndex(pageData.getNumber());
 
-                // Xóa dữ liệu cũ và hiển thị dữ liệu mới
-                gameGrid.getChildren().clear();
                 for (LibraryEntry entry : pageData.getContent()) {
                     Game game = entry.getGameDetail();
                     if (game != null) {
@@ -105,39 +140,28 @@ public class LibraryController implements Initializable {
                     }
                 }
             });
-
         } catch (Exception e) {
             e.printStackTrace();
-            Platform.runLater(() -> {
-                Label errorLabel = new Label("Error fetching games");
-                errorLabel.setStyle(
-                        "-fx-text-fill: #FF6B6B;" + "-fx-font-size: 16px;" + "-fx-font-weight: bold;");
-                gameGrid.getChildren().add(errorLabel);
-            });
+            Platform.runLater(() -> showError("Lỗi phân tích dữ liệu từ server."));
         }
     }
 
-    @FXML
-    private BorderPane mainPane;
-
-    @FXML
-    void showGameGrid() {
-        loadView("gamegrid-view");
-    }
-
+    /**
+     * ✅ Phương thức mới để chuyển sang màn hình chi tiết game.
+     * Nó sẽ tải gamedetail-view.fxml và đặt nó vào trung tâm của mainPane.
+     * 
+     * @param gameId ID của game cần hiển thị.
+     */
     public void showGameDetail(long gameId) {
         try {
-            // 1. Tạo FXMLLoader
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/com/centurionlauncher/fxml/gamedetail-view.fxml"));
-
-            // 2. Tải FXML
             Parent view = loader.load();
 
             GameDetailController controller = loader.getController();
+            controller.loadGameDetails(gameId); // Truyền gameId vào controller mới
 
-            controller.loadGameDetail(gameId);
-
+            // Đặt view mới vào trung tâm của BorderPane
             mainPane.setCenter(view);
 
         } catch (IOException e) {
@@ -146,53 +170,39 @@ public class LibraryController implements Initializable {
         }
     }
 
-    private void loadView(String fxml) {
-        try {
-            URL fileUrl = getClass().getResource("/com/centurionlauncher/fxml/" + fxml + ".fxml");
-            if (fileUrl == null) {
-                throw new java.io.FileNotFoundException("Không tìm thấy file: " + fxml);
-            }
-            Parent view = FXMLLoader.load(fileUrl);
-            mainPane.setCenter(view);
-        } catch (IOException e) {
-            System.err.println("Lỗi khi tải view: " + fxml);
-            e.printStackTrace();
-        }
+    private void showError(String message) {
+        Label errorLabel = new Label(message);
+        errorLabel.setStyle("-fx-text-fill: #FF6B6B; -fx-font-size: 16px;");
+        gameGrid.getChildren().add(errorLabel);
     }
 
     private Node createGameCard(Game game) {
-        // Ảnh bìa
         ImageView coverImage = new ImageView();
-        coverImage.setFitHeight(440);
-        coverImage.setFitWidth(300);
+        coverImage.setFitHeight(220);
+        coverImage.setFitWidth(150);
         coverImage.setPreserveRatio(true);
         String imageUrl = game.getHeaderImageUrl();
         if (imageUrl != null && !imageUrl.isEmpty()) {
             coverImage.setImage(new Image(imageUrl, true));
-        } else {
         }
 
-        // Tên game
         Label title = new Label(game.getName());
         title.setFont(new Font("System Bold", 14));
         title.setStyle("-fx-text-fill: white;");
         title.setWrapText(true);
         title.setMaxWidth(150);
 
-        // Card container
         VBox card = new VBox(10, coverImage, title);
         card.setAlignment(Pos.TOP_CENTER);
         card.setPrefWidth(150);
         card.getStyleClass().add("game-card");
         card.setCursor(Cursor.HAND);
 
+        // ✅ SỬA LẠI SỰ KIỆN CLICK: Gọi trực tiếp phương thức showGameDetail của lớp
+        // này.
         card.setOnMouseClicked(event -> {
             System.out.println("Clicked on game ID: " + game.getGameId());
-            if (mainLayoutController != null) {
-                mainLayoutController.showGameDetail(game.getGameId());
-            } else {
-                System.err.println("MainLayoutController chưa được thiết lập!");
-            }
+            showGameDetail(game.getGameId());
         });
 
         return card;

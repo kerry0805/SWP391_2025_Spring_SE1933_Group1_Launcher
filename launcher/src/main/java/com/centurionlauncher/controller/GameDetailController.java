@@ -2,6 +2,7 @@ package com.centurionlauncher.controller;
 
 import com.centurionlauncher.auth.AuthContext;
 import com.centurionlauncher.model.Game;
+import com.centurionlauncher.model.LibraryEntry; // Sử dụng LibraryEntry để khớp với DTO
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -22,6 +23,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
 
 /**
  * Controller này quản lý màn hình chi tiết của một game.
@@ -53,114 +55,123 @@ public class GameDetailController {
     // --- Dependencies & State ---
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private Game currentGame; // Lưu trữ thông tin của game đang được hiển thị
+    private Game currentGame;
+    private LibraryEntry currentLibraryEntry;
+    private LibraryController libraryController;
 
-    /**
-     * Phương thức này được gọi từ MainLayoutController để bắt đầu quá trình tải dữ
-     * liệu.
-     * 
-     * @param gameId ID của game cần hiển thị chi tiết.
-     */
+    public void setLibraryController(LibraryController libraryController) {
+        this.libraryController = libraryController;
+    }
+
     public void loadGameDetails(long gameId) {
-        // Đảm bảo vòng xoay tải đang hiển thị và nội dung chính bị ẩn
         loadingIndicator.setVisible(true);
         mainContentPane.setVisible(false);
 
-        // Tạo một Task để thực hiện cuộc gọi API trên luồng nền
-        Task<Game> fetchGameTask = new Task<>() {
+        Task<LibraryEntry> fetchGameTask = new Task<>() {
             @Override
-            protected Game call() throws Exception {
+            protected LibraryEntry call() throws Exception {
+                // ✅ SỬA LỖI: Xây dựng đúng URL với cả userId và gameId
+                Long userId = AuthContext.getInstance().getUserId();
+                if (userId == null) {
+                    throw new IllegalStateException("User ID is not available in AuthContext.");
+                }
+                String apiUrl = String.format("http://localhost:8080/user/library/%d/%d", userId, gameId);
+
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create("http://localhost:8080/api/games/" + gameId))
+                        .uri(URI.create(apiUrl))
                         .header("Authorization", "Bearer " + AuthContext.getInstance().getToken())
                         .build();
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
                 if (response.statusCode() != 200) {
-                    throw new IOException("Lỗi khi gọi API: " + response.statusCode() + " " + response.body());
+                    // Ném lỗi với nội dung từ server để dễ debug
+                    throw new IOException("Lỗi khi gọi API: " + response.statusCode() + " - " + response.body());
                 }
-                return objectMapper.readValue(response.body(), Game.class);
+
+                // ✅ SỬA LỖI: Phân tích JSON thành LibraryEntry, không phải Game
+                return objectMapper.readValue(response.body(), LibraryEntry.class);
             }
         };
 
-        // Xử lý khi task thành công
         fetchGameTask.setOnSucceeded(event -> {
-            Game fetchedGame = fetchGameTask.getValue();
-            Platform.runLater(() -> updateUI(fetchedGame));
+            LibraryEntry fetchedEntry = fetchGameTask.getValue();
+            Platform.runLater(() -> updateUI(fetchedEntry));
         });
 
-        // Xử lý khi task thất bại
         fetchGameTask.setOnFailed(event -> {
             fetchGameTask.getException().printStackTrace();
             Platform.runLater(() -> {
                 loadingIndicator.setVisible(false);
-                // Hiển thị thông báo lỗi thay vì nội dung chính
-                rootPane.getChildren().add(new Label("Lỗi: Không thể tải chi tiết game."));
+                rootPane.getChildren().add(new Label("Lỗi: " + fetchGameTask.getException().getMessage()));
             });
         });
 
         new Thread(fetchGameTask).start();
     }
 
-    /**
-     * Cập nhật các thành phần giao diện với dữ liệu từ đối tượng Game.
-     * 
-     * @param game Đối tượng Game chứa thông tin chi tiết.
-     */
-    private void updateUI(Game game) {
-        this.currentGame = game;
+    @FXML
+    private void handleBackToLibrary() {
+        if (libraryController != null) {
+            libraryController.showGameGrid();
+        } else {
+            System.err.println("Lỗi: LibraryController không được thiết lập trong GameDetailController.");
+        }
+    }
 
-        // Ẩn vòng xoay tải và hiển thị nội dung chính
+    private void updateUI(LibraryEntry libraryEntry) {
+        this.currentLibraryEntry = libraryEntry;
+        this.currentGame = libraryEntry.getGameDetail();
+
+        if (this.currentGame == null) {
+            // Xử lý trường hợp gameDetail bị null
+            loadingIndicator.setVisible(false);
+            rootPane.getChildren().add(new Label("Lỗi: Dữ liệu game không hợp lệ."));
+            return;
+        }
+
         loadingIndicator.setVisible(false);
         mainContentPane.setVisible(true);
 
-        // Cập nhật các thành phần giao diện
-        gameTitleLabel.setText(game.getName());
-        gameDescriptionLabel.setText(game.getShortDescription());
+        gameTitleLabel.setText(currentGame.getName());
+        gameDescriptionLabel.setText(currentGame.getShortDescription());
 
-        String imageUrl = game.getHeaderImageUrl();
+        String imageUrl = currentGame.getHeaderImageUrl();
         if (imageUrl != null && !imageUrl.isEmpty()) {
             gameHeaderImageView.setImage(new Image(imageUrl, true));
         }
 
-        // TODO: Cập nhật thông tin lastPlayedLabel từ dữ liệu thực tế
-        // lastPlayedLabel.setText(...);
-
-        // Cập nhật thời gian chơi
-        // long playtimeMillis = game.getPlaytimeInMillis(); // Giả sử có trường này
-        // long hours = playtimeMillis / 3_600_000;
-        // double minutes = (playtimeMillis % 3_600_000) / 60_000.0;
-        // playTimeLabel.setText(String.format("%d.%.1f hours", hours, minutes / 10.0));
-        // myReviewLabel.setText(String.format("You've played for %d.%.1f hours", hours,
-        // minutes / 10.0));
-
-        // TODO: Kiểm tra xem game đã được cài đặt chưa để thay đổi nút Play/Install
+        // Cập nhật thời gian chơi từ LibraryEntry
+        long playtimeMillis = libraryEntry.getPlaytimeInMillis();
+        long hours = playtimeMillis / 3_600_000;
+        long minutes = (playtimeMillis % 3_600_000) / 60_000;
+        String playtimeText = String.format("%d hours %d minutes", hours, minutes);
+        playTimeLabel.setText(playtimeText);
+        myReviewLabel.setText("You've played for " + playtimeText);
     }
 
-    /**
-     * Xử lý sự kiện khi nhấn nút Play/Install.
-     */
     @FXML
     private void handlePlayButtonAction() {
         if (currentGame == null) {
             System.err.println("Chưa có thông tin game để khởi chạy.");
             return;
         }
-        String stubExecutablePath = "D:\\Undertale\\UNDERTALE.exe"; // Tạm thời hardcode
+
+        String stubExecutablePath;
+
+        if ("Yume Nikki".equals(currentGame.getName())) {
+            stubExecutablePath = "E:\\SteamLibrary\\steamapps\\common\\Yume Nikki\\yumenikki\\RPG_RT.exe";
+        } else {
+            stubExecutablePath = "C:\\Program Files (x86)\\Microsoft Games\\Age of Empires\\Empires.exe";
+        }
+
         try {
             launchGame(stubExecutablePath);
         } catch (IOException e) {
             e.printStackTrace();
-            // TODO: Hiển thị dialog báo lỗi cho người dùng
         }
     }
 
-    /**
-     * Khởi chạy file thực thi của game và tính toán thời gian chơi.
-     * 
-     * @param executablePath Đường dẫn đến file .exe của game.
-     */
     private void launchGame(String executablePath) throws IOException {
-        System.out.println("Đang khởi chạy: " + executablePath);
         ProcessBuilder pb = new ProcessBuilder(executablePath);
         File gameDirectory = new File(executablePath).getParentFile();
         if (gameDirectory != null && gameDirectory.exists()) {
@@ -172,8 +183,17 @@ public class GameDetailController {
             Instant endTime = Instant.now();
             Duration duration = Duration.between(startTime, endTime);
             long playtimeMillis = duration.toMillis();
-            System.out.println("Game đã đóng. Thời gian chơi: " + playtimeMillis + " ms.");
-            // TODO: Gọi một service để gửi thời gian chơi này về backend
+            System.out.println("Game closed. Thời gian chơi: " + playtimeMillis + " ms.");
+            updatePlaytimeOnServer(playtimeMillis);
+            updateLastTimePlayed(Date.from(endTime));
         });
+    }
+
+    private void updatePlaytimeOnServer(long playtimeMillis) {
+        
+    }
+
+    private void updateLastTimePlayed(Date lastTimePlayed) {
+        
     }
 }

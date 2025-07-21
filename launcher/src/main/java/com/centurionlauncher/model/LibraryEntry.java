@@ -8,10 +8,16 @@ public class LibraryEntry {
 
     // Getters and Setters
     public Game getGameDetail() {
+        System.out.println(gameDetail);
         return gameDetail;
     }
 
     public void setGameDetail(Game gameDetail) {
         this.gameDetail = gameDetail;
+    }
+
+    public long getPlaytimeInMillis() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getPlaytimeInMillis'");
     }
 }

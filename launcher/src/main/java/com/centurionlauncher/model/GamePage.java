@@ -8,6 +8,7 @@ public class GamePage {
     private List<LibraryEntry> content;
     private int totalPages;
     private long totalElements;
+    private int number;
 
     // Getters and Setters
     public List<LibraryEntry> getContent() {
@@ -32,5 +33,13 @@ public class GamePage {
 
     public void setTotalElements(long totalElements) {
         this.totalElements = totalElements;
+    }
+
+    public int getNumber() {
+        return number;
+    }
+
+    public void setNumber(int number) {
+        this.number = number;
     }
 }
