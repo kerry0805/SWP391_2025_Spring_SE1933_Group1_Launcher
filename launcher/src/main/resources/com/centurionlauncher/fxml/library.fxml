@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" stylesheets="@../styles/stylelib.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.centurionlauncher.controller.LibraryController">
+<BorderPane fx:id="mainPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" stylesheets="@../styles/stylelib.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.centurionlauncher.controller.LibraryController">
    
    <top>
       <HBox alignment="CENTER_LEFT" prefHeight="50.0" spacing="20.0" styleClass="header" BorderPane.alignment="CENTER">
@@ -31,7 +31,7 @@
                         <Image url="https://i.redd.it/ffxjnceu7vf81.png" />
                      </image>
                   </ImageView>
-                  <Label fx:id="usernameLabel" text="Username" styleClass="username-label" />
+                  <Label fx:id="usernameLabel" styleClass="username-label" text="Username" />
                </children>
             </HBox>
          </children>
@@ -44,22 +44,19 @@
    <left>
       <VBox prefWidth="200.0" spacing="10.0" styleClass="sidebar" BorderPane.alignment="CENTER">
          <children>
-            <Label styleClass="sidebar-title" text="Thư viện">
+            <Label styleClass="sidebar-title" text="Library">
                <font>
                   <Font name="System Bold" size="16.0" />
                </font>
             </Label>
-            <Button mnemonicParsing="false" prefWidth="180.0" text="Tất cả Game" />
-            <Button mnemonicParsing="false" prefWidth="180.0" text="Mới chơi gần đây" />
-            <Button mnemonicParsing="false" prefWidth="180.0" text="Yêu thích" />
-            <Label styleClass="sidebar-title" text="Thể loại">
+            <Button mnemonicParsing="false" prefWidth="180.0" text="All Games" />
+            <Button mnemonicParsing="false" prefWidth="180.0" text="Recently Played" />
+            <Button mnemonicParsing="false" prefWidth="180.0" text="Favorites" />
+            <Label styleClass="sidebar-title" text="Tag">
                <font>
                   <Font name="System Bold" size="16.0" />
                </font>
             </Label>
-            <Button mnemonicParsing="false" prefWidth="180.0" text="Hành động" />
-            <Button mnemonicParsing="false" prefWidth="180.0" text="Chiến thuật" />
-            <Button mnemonicParsing="false" prefWidth="180.0" text="Nhập vai" />
          </children>
          <padding>
             <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
@@ -68,18 +65,7 @@
    </left>
 
    <center>
-      <VBox spacing="15.0" BorderPane.alignment="CENTER">
-         <children>
-            <TilePane fx:id="gameGrid" hgap="20.0" vgap="20.0" VBox.vgrow="ALWAYS" />
-            
-            <HBox alignment="CENTER">
-                <Pagination fx:id="pagination" maxPageIndicatorCount="7" />
-            </HBox>
-         </children>
-         <padding>
-            <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
-         </padding>
-      </VBox>
+      
    </center>
    
 </BorderPane>

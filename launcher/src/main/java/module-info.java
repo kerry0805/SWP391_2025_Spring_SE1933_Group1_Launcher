@@ -1,4 +1,4 @@
-module com.kerilauncher {
+module com.centurionlauncher {
     requires javafx.controls;
     requires javafx.fxml;
     requires com.fasterxml.jackson.databind;
@@ -8,6 +8,7 @@ module com.kerilauncher {
 
     opens com.centurionlauncher to javafx.fxml;
     opens com.centurionlauncher.controller to javafx.fxml;
+    opens com.centurionlauncher.model to javafx.fxml,com.fasterxml.jackson.databind;
 
     exports com.centurionlauncher;
 }

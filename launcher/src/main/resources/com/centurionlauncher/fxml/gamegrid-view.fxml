@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Pagination?>
+<?import javafx.scene.layout.TilePane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.HBox?>
+
+
+
+        <VBox spacing="15.0" style="-fx-background-color: #000000;">
+         <children>
+            <TilePane xmlns:fx="http://javafx.com/fxml/1" fx:id="gameGrid" hgap="20.0" stylesheets="@../styles/stylelib.css" vgap="20.0" VBox.vgrow="ALWAYS" />
+            
+            <HBox alignment="CENTER">
+                <Pagination xmlns:fx="http://javafx.com/fxml/1" fx:id="pagination" maxPageIndicatorCount="7" />
+            </HBox>
+         </children>
+         <padding>
+            <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+         </padding>
+        </VBox>
