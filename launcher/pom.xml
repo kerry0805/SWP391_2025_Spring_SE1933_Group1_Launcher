@@ -49,6 +49,23 @@
     </dependencies>
     <build>
         <plugins>
+                <plugin>
+                    <groupId>org.panteleyev</groupId>
+                    <artifactId>jpackage-maven-plugin</artifactId>
+                    <version>1.5.0</version>
+                    <configuration>
+                        <name>Centurion Launcher</name>
+                        <appVersion>1.0.0</appVersion>
+                        <vendor>Centurion Team</vendor>
+                        <destination>installers</destination>
+                        <input>${project.build.directory}</input>
+                        <mainJar>${project.build.finalName}.jar</mainJar>
+                        <mainClass>com.centurionlauncher.App</mainClass>
+                        <icon>src/main/resources/com/centurionlauncher/icons/app_icon.ico</icon>
+                        <winMenu>true</winMenu>
+                        <winShortcut>true</winShortcut>
+                    </configuration>
+                </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
