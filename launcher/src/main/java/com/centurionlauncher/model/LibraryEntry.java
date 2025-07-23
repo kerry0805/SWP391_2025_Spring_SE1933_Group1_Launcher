@@ -1,12 +1,23 @@
 package com.centurionlauncher.model;
 
+import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class LibraryEntry {
     private Game gameDetail;
+    private long playtimeInMillis;
+    private LocalDateTime lastPlayedTime;
 
-    // Getters and Setters
+    public LocalDateTime getLastPlayedTime() {
+        return lastPlayedTime;
+    }
+
+    public void setLastPlayedTime(LocalDateTime lastPlayedTime) {
+        this.lastPlayedTime = lastPlayedTime;
+    }
+
     public Game getGameDetail() {
         System.out.println(gameDetail);
         return gameDetail;
@@ -17,7 +28,6 @@ public class LibraryEntry {
     }
 
     public long getPlaytimeInMillis() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getPlaytimeInMillis'");
+        return playtimeInMillis;
     }
 }

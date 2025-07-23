@@ -96,7 +96,7 @@ public class LibraryController implements Initializable {
     }
 
     private void loadLibraryData(int pageNumber) {
-        gameGrid.getChildren().clear(); // Xóa các game cũ trước khi tải mới
+        gameGrid.getChildren().clear();
 
         String apiUrl = String.format("http://localhost:8080/user/library?page=%d&size=12", pageNumber);
 
@@ -159,9 +159,8 @@ public class LibraryController implements Initializable {
             Parent view = loader.load();
 
             GameDetailController controller = loader.getController();
-            controller.loadGameDetails(gameId); // Truyền gameId vào controller mới
+            controller.loadGameDetails(gameId); 
 
-            // Đặt view mới vào trung tâm của BorderPane
             mainPane.setCenter(view);
 
         } catch (IOException e) {

@@ -19,12 +19,7 @@
         <BorderPane fx:id="mainContentPane" visible="false">
             <top>
                 <VBox>
-                    <!-- ✅ THANH ĐIỀU HƯỚNG MỚI -->
-                    <HBox alignment="CENTER_LEFT" style="-fx-padding: 10 50 10 50;">
-                        <children>
-                            <Button onAction="#handleBackToLibrary" styleClass="back-button" text="Library" />
-                        </children>
-                    </HBox>
+                    
 
                     <!-- Ảnh header của game -->
                     <ImageView fx:id="gameHeaderImageView" fitHeight="300.0" pickOnBounds="true" preserveRatio="true" />

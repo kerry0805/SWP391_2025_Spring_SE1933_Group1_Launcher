@@ -1,5 +1,6 @@
 package com.centurionlauncher.model;
 
+import java.time.LocalDate;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -8,10 +9,63 @@ public class Game {
     private long gameId;
     private String name;
     private String shortDescription;
+    private String fullDescription;
     private List<Tag> tags;
     private List<Media> media;
+    private Boolean state;
+    private String gameUrl;
+    private String iconUrl;
+    private String updateLog;
 
-    // Helper method để lấy ảnh header
+    public String getFullDescription() {
+        return fullDescription;
+    }
+
+    public void setFullDescription(String fullDescription) {
+        this.fullDescription = fullDescription;
+    }
+
+    // public LocalDate getReleaseDate() {
+    //     return releaseDate;
+    // }
+
+    // public void setReleaseDate(LocalDate releaseDate) {
+    //     this.releaseDate = releaseDate;
+    // }
+
+    public Boolean getState() {
+        return state;
+    }
+
+    public void setState(Boolean state) {
+        this.state = state;
+    }
+
+    public String getGameUrl() {
+        return gameUrl;
+    }
+
+    public void setGameUrl(String gameUrl) {
+        this.gameUrl = gameUrl;
+    }
+
+    public String getIconUrl() {
+        return iconUrl;
+    }
+
+    public void setIconUrl(String iconUrl) {
+        this.iconUrl = iconUrl;
+    }
+
+    public String getUpdateLog() {
+        return updateLog;
+    }
+
+    public void setUpdateLog(String updateLog) {
+        this.updateLog = updateLog;
+    }
+
+
     public String getHeaderImageUrl() {
         if (media != null) {
             for (Media m : media) {
@@ -23,7 +77,6 @@ public class Game {
         return null; // Hoặc trả về một URL ảnh mặc định
     }
 
-    // Getters and Setters cho các trường khác...
     public long getGameId() {
         return gameId;
     }

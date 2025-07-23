@@ -82,13 +82,11 @@ public class GameDetailController {
                         .header("Authorization", "Bearer " + AuthContext.getInstance().getToken())
                         .build();
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                System.out.println("API Response: " + response.body());
 
                 if (response.statusCode() != 200) {
-                    // Ném lỗi với nội dung từ server để dễ debug
                     throw new IOException("Lỗi khi gọi API: " + response.statusCode() + " - " + response.body());
                 }
-
-                // ✅ SỬA LỖI: Phân tích JSON thành LibraryEntry, không phải Game
                 return objectMapper.readValue(response.body(), LibraryEntry.class);
             }
         };
@@ -102,10 +100,10 @@ public class GameDetailController {
             fetchGameTask.getException().printStackTrace();
             Platform.runLater(() -> {
                 loadingIndicator.setVisible(false);
-                rootPane.getChildren().add(new Label("Lỗi: " + fetchGameTask.getException().getMessage()));
+                rootPane.getChildren().add(new Label("Error fetch game task: " + fetchGameTask.getException().getMessage()));
             });
         });
-
+        
         new Thread(fetchGameTask).start();
     }
 
@@ -114,18 +112,18 @@ public class GameDetailController {
         if (libraryController != null) {
             libraryController.showGameGrid();
         } else {
-            System.err.println("Lỗi: LibraryController không được thiết lập trong GameDetailController.");
+            System.err.println("LibraryController is null. Cannot navigate back.");
         }
     }
 
     private void updateUI(LibraryEntry libraryEntry) {
         this.currentLibraryEntry = libraryEntry;
         this.currentGame = libraryEntry.getGameDetail();
-
+        rootPane.getChildren().add(new Label("Game URL: " + currentGame.getGameUrl()));
+        
         if (this.currentGame == null) {
-            // Xử lý trường hợp gameDetail bị null
             loadingIndicator.setVisible(false);
-            rootPane.getChildren().add(new Label("Lỗi: Dữ liệu game không hợp lệ."));
+            rootPane.getChildren().add(new Label("Invalid data"));
             return;
         }
 
@@ -139,8 +137,6 @@ public class GameDetailController {
         if (imageUrl != null && !imageUrl.isEmpty()) {
             gameHeaderImageView.setImage(new Image(imageUrl, true));
         }
-
-        // Cập nhật thời gian chơi từ LibraryEntry
         long playtimeMillis = libraryEntry.getPlaytimeInMillis();
         long hours = playtimeMillis / 3_600_000;
         long minutes = (playtimeMillis % 3_600_000) / 60_000;
@@ -190,10 +186,10 @@ public class GameDetailController {
     }
 
     private void updatePlaytimeOnServer(long playtimeMillis) {
-        
+
     }
 
     private void updateLastTimePlayed(Date lastTimePlayed) {
-        
+
     }
 }
