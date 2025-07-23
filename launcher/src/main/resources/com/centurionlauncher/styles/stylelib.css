@@ -1,10 +1,8 @@
-/* Giao diện tổng thể */
 .root-pane {
   -fx-background-color: #2b2d30;
   -fx-font-family: "Segoe UI", Arial, sans-serif;
 }
 
-/* Thanh header */
 .header {
   -fx-background-color: #1e1f22;
 }
@@ -13,10 +11,9 @@
 .username-label,
 .sidebar-title,
 .label {
-  -fx-text-fill: #e0e0e0; /* Màu chữ sáng */
+  -fx-text-fill: #e0e0e0; 
 }
 
-/* Thanh sidebar */
 .sidebar {
   -fx-background-color: #242528;
 }
@@ -33,13 +30,12 @@
   -fx-background-color: #3a3b3c;
 }
 
-/* Nút phân trang */
 .pagination .pagination-control .button {
   -fx-background-color: #404245;
   -fx-text-fill: white;
 }
 .pagination .pagination-control .toggle-button:selected {
-  -fx-background-color: #0078d7; /* Màu xanh khi được chọn */
+  -fx-background-color: #0078d7; 
 }
 
 .grid{

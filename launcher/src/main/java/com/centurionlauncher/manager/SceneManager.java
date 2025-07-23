@@ -28,11 +28,11 @@ public class SceneManager {
     }
 
     public void switchToLogin() {
-        loadScene("/com/centurionlauncher/fxml/login.fxml", "Đăng nhập");
+        loadScene("/com/centurionlauncher/fxml/login.fxml", "Login");
     }
 
     public void switchToLibrary() {
-        loadScene("/com/centurionlauncher/fxml/library.fxml", "Thư viện Game");
+        loadScene("/com/centurionlauncher/fxml/library.fxml", "Library");
     }
 
     private void loadScene(String fxmlPath, String title) {

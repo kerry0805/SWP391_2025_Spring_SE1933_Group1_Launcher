@@ -74,7 +74,7 @@ public class Game {
                 }
             }
         }
-        return null; // Hoặc trả về một URL ảnh mặc định
+        return null; 
     }
 
     public long getGameId() {

@@ -42,27 +42,25 @@ public class GameManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        // Khởi tạo HttpClient một lần để tái sử dụng
-        this.httpClient = createTrustAllHttpClient();
+        this.httpClient = HttpClient.newBuilder().build();
     }
 
     private Path getGameInstallationPath(Game game) {
-        String safeFolderName = game.getName().replaceAll("[^a-zA-Z0-9.-]", "_");
-        return gamesBaseDirectory.resolve(safeFolderName);
+        String snakeCaseName = game.getName()
+                .trim()
+                .toLowerCase()
+                .replaceAll("\\s+", "_");
+        return gamesBaseDirectory.resolve(snakeCaseName).resolve(snakeCaseName);
     }
 
     public Path getExecutablePath(Game game) {
-        // Tên file thực thi nên được lấy từ model Game hoặc có logic cụ thể.
-        if ("Yume Nikki".equals(game.getName())) {
-            return getGameInstallationPath(game).resolve("yumenikki/RPG_RT.exe");
-        } else if ("Age of Empires".equals(game.getName())) {
-            return getGameInstallationPath(game).resolve("Empires.exe");
-        }
-        // Cung cấp một giá trị mặc định an toàn
         return getGameInstallationPath(game).resolve("launch.exe");
     }
 
     public boolean isGameInstalled(Game game) {
+        System.out.println("Checking if game is installed: " + game.getName());
+        System.out.println("Game path: " + getExecutablePath(game));
+        System.out.println(Files.exists(getExecutablePath(game)));
         return Files.exists(getExecutablePath(game));
     }
 
@@ -89,16 +87,16 @@ public class GameManager {
         return new Task<>() {
             @Override
             protected Void call() throws Exception {
-                // --- Giai đoạn 0: Lấy URL tải về từ API ---
                 updateMessage("Fetching download link for " + game.getName() + "...");
-                String fileId = game.getGameUrl(); 
+                String fileId = game.getGameUrl();
                 if (fileId == null || fileId.isEmpty()) {
                     throw new IOException("No file ID");
                 }
 
-                String apiUrl = String.format("http://localhost:8080/request/file/download/%s", fileId);
+                String apiUrl = String.format(
+                        "https://swp3912025springse1933group1backend-production.up.railway.app/request/file/download/%s",
+                        fileId);
                 System.out.println(apiUrl);
-
 
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create(apiUrl))
@@ -108,7 +106,8 @@ public class GameManager {
 
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() != 200) {
-                    throw new IOException("Cant fetch download link " + response.statusCode() + " - " + response.body());
+                    throw new IOException(
+                            "Cant fetch download link " + response.statusCode() + " - " + response.body());
                 }
                 String downloadUrl = response.body();
                 System.out.println("Download link " + downloadUrl);
@@ -142,7 +141,7 @@ public class GameManager {
                                     totalBytesRead / (1024 * 1024),
                                     fileSize / (1024 * 1024)));
                         } else {
-                            updateProgress(-1, -1); 
+                            updateProgress(-1, -1);
                             updateMessage(String.format("Downloading... %d MB", totalBytesRead / (1024 * 1024)));
                         }
                     }
@@ -184,33 +183,4 @@ public class GameManager {
         };
     }
 
-    /**
-     * Tạo một HttpClient bỏ qua kiểm tra chứng chỉ SSL.
-     * Rất hữu ích khi làm việc với localhost qua HTTPS (chứng chỉ tự ký).
-     * CẢNH BÁO: KHÔNG SỬ DỤNG TRONG MÔI TRƯỜNG PRODUCTION!
-     */
-    private static HttpClient createTrustAllHttpClient() {
-        try {
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            TrustManager[] trustAllCerts = new TrustManager[] {
-                    new X509TrustManager() {
-                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                            return null;
-                        }
-
-                        public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {
-                        }
-
-                        public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {
-                        }
-                    }
-            };
-            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-            return HttpClient.newBuilder().sslContext(sslContext).build();
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            // Quay về HttpClient mặc định nếu có lỗi
-            e.printStackTrace();
-            return HttpClient.newHttpClient();
-        }
-    }
 }

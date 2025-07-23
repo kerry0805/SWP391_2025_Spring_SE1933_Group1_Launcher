@@ -15,25 +15,21 @@
 
 <StackPane fx:id="rootPane" style="-fx-background-color: #1b2838;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.centurionlauncher.controller.GameDetailController">
     <children>
-        <!-- BorderPane chứa nội dung chính, ban đầu sẽ bị ẩn -->
         <BorderPane fx:id="mainContentPane" visible="false">
             <top>
                 <VBox>
                     
 
-                    <!-- Ảnh header của game -->
                     <ImageView fx:id="gameHeaderImageView" fitHeight="300.0" pickOnBounds="true" preserveRatio="true" />
                     
-                    <!-- Thanh Play và thông tin -->
                     <HBox alignment="CENTER_LEFT" spacing="30.0" style="-fx-padding: 15 50 15 50; -fx-background-color: rgba(0,0,0,0.2);">
                         <children>
                             <VBox spacing="10.0">
                                 <children>
                                     <Button fx:id="playButton" mnemonicParsing="false" onAction="#handlePlayButtonAction" prefHeight="50.0" prefWidth="180.0" styleClass="play-button" text="INSTALL" />
-                                    <!-- VBox này ban đầu sẽ bị ẩn -->
                                     <VBox fx:id="installProgressBox" alignment="CENTER_LEFT" managed="false" spacing="5.0" visible="false">
                                         <children>
-                                            <Label fx:id="installStatusLabel" style="-fx-text-fill: white;" text="Đang tải..." />
+                                            <Label fx:id="installStatusLabel" style="-fx-text-fill: white;" text="Installing" />
                                             <ProgressBar fx:id="installProgressBar" prefWidth="180.0" progress="0.0" />
                                         </children>
                                     </VBox>
@@ -54,8 +50,7 @@
                             <Region HBox.hgrow="ALWAYS" />
                             <HBox alignment="CENTER" spacing="10.0">
                                 <children>
-                                    <Button mnemonicParsing="false" styleClass="icon-button" text="⚙" />
-                                    <Button mnemonicParsing="false" styleClass="icon-button" text="☆" />
+                                <Button fx:id="uninstallButton" mnemonicParsing="false" onAction="#handleUninstallButtonAction" styleClass="uninstall-button" text="Uninstall" />
                                 </children>
                             </HBox>
                         </children>
@@ -63,17 +58,14 @@
                 </VBox>
             </top>
             <center>
-                <!-- Khu vực nội dung chính với 2 cột -->
                 <HBox spacing="20.0" BorderPane.alignment="CENTER">
                     <children>
-                        <!-- Cột trái: Mô tả game -->
                         <VBox prefWidth="750.0" spacing="20.0" HBox.hgrow="ALWAYS">
                             <children>
                                 <Label fx:id="gameTitleLabel" styleClass="game-title" text="Game Title" />
                                 <Label fx:id="gameDescriptionLabel" styleClass="game-description" text="Description loading..." wrapText="true" />
                             </children>
                         </VBox>
-                        <!-- Cột phải: Thông tin phụ -->
                         <VBox minWidth="350.0" prefWidth="350.0" spacing="15.0" styleClass="right-sidebar">
                             <children>
                                 <Label styleClass="sidebar-header" text="FRIENDS WHO PLAY" />
@@ -89,7 +81,6 @@
             </center>
         </BorderPane>
         
-        <!-- Vòng xoay tải, sẽ hiển thị ở giữa màn hình -->
         <ProgressIndicator fx:id="loadingIndicator" maxHeight="100" maxWidth="100" visible="true" />
     </children>
 </StackPane>

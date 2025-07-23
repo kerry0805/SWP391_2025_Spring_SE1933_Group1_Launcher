@@ -4,23 +4,18 @@ import java.util.List;
 
 public final class AuthContext {
 
-    // Biến static để giữ thể hiện (instance) duy nhất của lớp
     private static AuthContext instance;
-    // Các trường để lưu trữ thông tin ngữ cảnh
     private String token;
     private Long userId;
     private String username;
     private String role;
 
-    // Constructor private để ngăn việc tạo đối tượng từ bên ngoài
     private AuthContext() {
     }
 
     /**
-     * Phương thức public, static để lấy thể hiện duy nhất của lớp.
-     * Đây là cách duy nhất để truy cập vào đối tượng AuthContext.
      * 
-     * @return Thể hiện duy nhất của AuthContext.
+     * @return instance of AuthContext
      */
     public static AuthContext getInstance() {
         if (instance == null) {
@@ -30,12 +25,11 @@ public final class AuthContext {
     }
 
     /**
-     * Thiết lập ngữ cảnh sau khi người dùng đăng nhập thành công.
      * 
      * @param token    JWT token nhận được từ backend.
      * @param userId   ID của người dùng.
      * @param username Tên đăng nhập của người dùng.
-     * @param roles    Danh sách quyền của người dùng.
+     * @param roles    Danh sách role của người dùng.
      */
     public void setAuthentication(String token, Long userId, String username, String role) {
         this.token = token;
@@ -44,9 +38,7 @@ public final class AuthContext {
         this.role = role;
     }
 
-    /**
-     * Xóa ngữ cảnh xác thực (khi người dùng đăng xuất).
-     */
+
     public void clearAuthentication() {
         this.token = null;
         this.userId = null;
@@ -54,7 +46,6 @@ public final class AuthContext {
         this.role = null;
     }
 
-    // --- Các phương thức Getter để truy xuất thông tin ---
 
     public String getToken() {
         return token;
@@ -73,9 +64,8 @@ public final class AuthContext {
     }
 
     /**
-     * Kiểm tra xem người dùng đã được xác thực hay chưa.
      * 
-     * @return true nếu ngữ cảnh có chứa token, ngược lại là false.
+     * @return true if authenticated, false otherwise
      */
     public boolean isAuthenticated() {
         return this.token != null && !this.token.isEmpty();

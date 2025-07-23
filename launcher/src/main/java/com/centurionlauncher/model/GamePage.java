@@ -3,7 +3,7 @@ package com.centurionlauncher.model;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@JsonIgnoreProperties(ignoreUnknown = true) // Bỏ qua các trường không cần thiết
+@JsonIgnoreProperties(ignoreUnknown = true) 
 public class GamePage {
     private List<LibraryEntry> content;
     private int totalPages;

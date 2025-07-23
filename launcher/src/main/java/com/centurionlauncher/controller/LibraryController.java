@@ -33,21 +33,19 @@ import java.net.http.HttpResponse;
 import java.util.ResourceBundle;
 
 /**
- * Controller này bây giờ đóng vai trò là Controller chính,
- * quản lý cả layout chính và lưới game.
+ * Main Library Controller
+ * manage layout and game grid
  */
 public class LibraryController implements Initializable {
 
-    // --- FXML Injections (Bao gồm các component từ layout chính và view lưới game)
-    // ---
     @FXML
-    private BorderPane mainPane; // Component từ layout chính (library.fxml)
+    private BorderPane mainPane;
     @FXML
-    private Label usernameLabel; // Component từ layout chính
+    private Label usernameLabel;
     @FXML
-    private TilePane gameGrid; // Component được include từ gamegrid-view.fxml
+    private TilePane gameGrid;
     @FXML
-    private Pagination pagination; // Component được include từ gamegrid-view.fxml
+    private Pagination pagination;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -56,12 +54,12 @@ public class LibraryController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         if (AuthContext.getInstance().isAuthenticated()) {
             usernameLabel.setText(AuthContext.getInstance().getUsername());
-            loadLibraryData(0); // Tải dữ liệu cho trang đầu tiên
+            loadLibraryData(0);
             setupPagination();
         } else {
             // Xử lý nếu chưa đăng nhập
             usernameLabel.setText("Guest");
-            gameGrid.getChildren().add(new Label("Vui lòng đăng nhập để xem thư viện."));
+            gameGrid.getChildren().add(new Label("Please login to view your library."));
         }
     }
 
@@ -74,7 +72,6 @@ public class LibraryController implements Initializable {
     @FXML
     void showGameGrid() {
         try {
-            // Tải lại file FXML chứa lưới game và phân trang
             Parent gameGridView = FXMLLoader
                     .load(getClass().getResource("/com/centurionlauncher/fxml/gamegrid-view.fxml"));
 
@@ -100,7 +97,9 @@ public class LibraryController implements Initializable {
     private void loadLibraryData(int pageNumber) {
         gameGrid.getChildren().clear();
 
-        String apiUrl = String.format("http://localhost:8080/user/library?page=%d&size=12", pageNumber);
+        String apiUrl = String.format(
+                "https://swp3912025springse1933group1backend-production.up.railway.app/user/library?page=%d&size=12",
+                pageNumber);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl))

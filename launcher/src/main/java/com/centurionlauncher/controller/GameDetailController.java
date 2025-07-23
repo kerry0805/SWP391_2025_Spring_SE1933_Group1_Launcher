@@ -3,7 +3,7 @@ package com.centurionlauncher.controller;
 import com.centurionlauncher.auth.AuthContext;
 import com.centurionlauncher.manager.GameManager;
 import com.centurionlauncher.model.Game;
-import com.centurionlauncher.model.LibraryEntry; // Sử dụng LibraryEntry để khớp với DTO
+import com.centurionlauncher.model.LibraryEntry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -12,12 +12,15 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -33,10 +36,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
- * Controller này quản lý màn hình chi tiết của một game.
+ * Controller for the game detail view.
  */
 public class GameDetailController implements Initializable {
 
@@ -67,6 +71,10 @@ public class GameDetailController implements Initializable {
     private ProgressIndicator installProgressBar;
     @FXML
     private VBox installProgressBox;
+    @FXML
+    private HBox settingsMenu;
+    @FXML
+    private Button uninstallButton;
 
     // --- Dependencies & State ---
     private final HttpClient httpClient = HttpClient.newHttpClient();
@@ -96,7 +104,9 @@ public class GameDetailController implements Initializable {
                 if (userId == null) {
                     throw new IllegalStateException("User ID is not available in AuthContext.");
                 }
-                String apiUrl = String.format("http://localhost:8080/user/library/%d/%d", userId, gameId);
+                String apiUrl = String.format(
+                        "https://swp3912025springse1933group1backend-production.up.railway.app/user/library/%d/%d",
+                        userId, gameId);
 
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create(apiUrl))
@@ -198,21 +208,13 @@ public class GameDetailController implements Initializable {
     @FXML
     private void handlePlayButtonAction() {
         if (currentGame == null) {
-            System.err.println("Chưa có thông tin game để khởi chạy.");
+            System.err.println("No game selected.");
             return;
         }
         if ("INSTALL".equals(playButton.getText())) {
             installGame();
         } else if ("▶  PLAY".equals(playButton.getText())) {
-
-            String stubExecutablePath;
-
-            if ("Yume Nikki".equals(currentGame.getName())) {
-                stubExecutablePath = "E:\\SteamLibrary\\steamapps\\common\\Yume Nikki\\yumenikki\\RPG_RT.exe";
-            } else {
-                stubExecutablePath = "C:\\Program Files (x86)\\Microsoft Games\\Age of Empires\\Empires.exe";
-            }
-
+            String stubExecutablePath = gameManager.getExecutablePath(currentGame).toString();
             try {
                 launchGame(stubExecutablePath, currentGame.getGameId());
             } catch (IOException e) {
@@ -221,8 +223,27 @@ public class GameDetailController implements Initializable {
         }
     }
 
+    @FXML
+    private void handleUninstallButtonAction() {
+        if (currentGame == null)
+            return;
+
+        Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmationAlert.setTitle("Confirm Uninstall?");
+        confirmationAlert.setHeaderText("Are you sure you want to uninstall " + currentGame.getName() + "?");
+        confirmationAlert.setContentText("All of your progress will be lost.");
+        Optional<ButtonType> result = confirmationAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            gameManager.uninstallGame(currentGame);
+            playButton.setText("INSTALL");
+            uninstallButton.setDisable(true);
+        }
+    }
+
     private void updatePlaytimeInLibrary(long playtimeMillis, long gameId) throws IOException, InterruptedException {
-        String apiUrl = String.format("http://localhost:8080/user/library/%d/playtime", gameId);
+        String apiUrl = String.format(
+                "https://swp3912025springse1933group1backend-production.up.railway.app/user/library/%d/playtime",
+                gameId);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl))
                 .header("Authorization", "Bearer " + AuthContext.getInstance().getToken())
@@ -284,7 +305,7 @@ public class GameDetailController implements Initializable {
         installTask.setOnFailed(event -> {
             installTask.getException().printStackTrace();
             Platform.runLater(() -> {
-                installStatusLabel.setText("Cài đặt thất bại!");
+                installStatusLabel.setText("Fail Install");
                 playButton.setDisable(false);
             });
         });

@@ -31,7 +31,6 @@ public class LoginController {
     @FXML
     private Button logInButton;
 
-    // HttpClient được tạo một lần và tái sử dụng
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -45,27 +44,23 @@ public class LoginController {
             return;
         }
 
-        // Vô hiệu hóa nút để tránh click nhiều lần
         logInButton.setDisable(true);
         logInButton.setText("Logging in...");
 
         try {
-            // 1. Tạo đối tượng request body
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("username", username);
             requestBody.put("password", password);
 
-            // Chuyển đổi Map thành chuỗi JSON
             String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-            // 2. Tạo yêu cầu HTTP POST
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/api/auth/login")) 
+                    .uri(URI.create(
+                            "https://swp3912025springse1933group1backend-production.up.railway.app/api/auth/login"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonRequestBody))
                     .build();
 
-            // 3. Gửi yêu cầu bất đồng bộ để không làm đơ UI
             httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenApply(HttpResponse::body)
                     .thenAccept(this::handleSuccessfulResponse)
@@ -127,7 +122,6 @@ public class LoginController {
         });
     }
 
-    // Hiển thị một dialog thông báo đơn giản
     private void showAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
