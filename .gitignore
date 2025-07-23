@@ -1,6 +1,3 @@
-launcher\target
-/target/
-/target
-*.class
-*.class
+/launcher/target/
+
 
