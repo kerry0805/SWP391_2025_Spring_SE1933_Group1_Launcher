@@ -82,7 +82,7 @@ public class LibraryController implements Initializable {
             this.pagination = (Pagination) gameGridView.lookup("#pagination");
 
             if (this.gameGrid == null || this.pagination == null) {
-                System.err.println("Lỗi: Không tìm thấy #gameGrid hoặc #pagination trong gamegrid-view.fxml!");
+                System.err.println("no game grid or pagination in gamegrid-view.fxml");
                 return;
             }
 
@@ -92,7 +92,7 @@ public class LibraryController implements Initializable {
             setupPagination();
 
         } catch (IOException e) {
-            System.err.println("Lỗi khi tải lại gamegrid-view.fxml");
+            System.err.println("error reloading gamegrid-view.fxml");
             e.printStackTrace();
         }
     }
@@ -111,7 +111,7 @@ public class LibraryController implements Initializable {
                 .thenAccept(this::processHttpResponse)
                 .exceptionally(error -> {
                     error.printStackTrace();
-                    Platform.runLater(() -> showError("Lỗi kết nối đến server."));
+                    Platform.runLater(() -> showError("Error load api library data"));
                     return null;
                 });
     }
@@ -121,7 +121,7 @@ public class LibraryController implements Initializable {
             handleLibraryResponse(response.body());
         } else {
             Platform.runLater(() -> {
-                showError("Lỗi từ server (Code: " + response.statusCode() + ")");
+                showError("Err server (Code: " + response.statusCode() + ")");
                 System.err.println("Error Body: " + response.body());
             });
         }
@@ -144,15 +144,13 @@ public class LibraryController implements Initializable {
             });
         } catch (Exception e) {
             e.printStackTrace();
-            Platform.runLater(() -> showError("Lỗi phân tích dữ liệu từ server."));
+            Platform.runLater(() -> showError("Error hanlde lib response"));
         }
     }
 
     /**
-     * ✅ Phương thức mới để chuyển sang màn hình chi tiết game.
-     * Nó sẽ tải gamedetail-view.fxml và đặt nó vào trung tâm của mainPane.
-     * 
-     * @param gameId ID của game cần hiển thị.
+     *
+     * @param gameId
      */
     public void showGameDetail(long gameId) {
         try {
@@ -166,7 +164,7 @@ public class LibraryController implements Initializable {
             mainPane.setCenter(view);
 
         } catch (IOException e) {
-            System.err.println("Lỗi khi tải gamedetail-view.fxml");
+            System.err.println("Error loading gamedetail-view.fxml");
             e.printStackTrace();
         }
     }

@@ -78,7 +78,6 @@ public class LoginController {
         }
     }
 
-    // Xử lý khi nhận được phản hồi thành công (status 2xx)
     private void handleSuccessfulResponse(String responseBody) {
         Platform.runLater(() -> {
             try {
@@ -112,10 +111,8 @@ public class LoginController {
         });
     }
 
-    // Xử lý khi có lỗi (lỗi mạng hoặc server trả về lỗi)
     private Void handleFailedResponse(Throwable throwable) {
         Platform.runLater(() -> {
-            // Throwable có thể chứa thông tin về lỗi HTTP
             System.err.println("Login failed: " + throwable.getMessage());
             showAlert("Login Failed", "Invalid username or password, or server is unavailable.");
             resetLoginButton();
@@ -123,7 +120,6 @@ public class LoginController {
         return null;
     }
 
-    // Đặt lại trạng thái của nút login
     private void resetLoginButton() {
         Platform.runLater(() -> {
             logInButton.setDisable(false);

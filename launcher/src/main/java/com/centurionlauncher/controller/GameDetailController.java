@@ -1,6 +1,7 @@
 package com.centurionlauncher.controller;
 
 import com.centurionlauncher.auth.AuthContext;
+import com.centurionlauncher.manager.GameManager;
 import com.centurionlauncher.model.Game;
 import com.centurionlauncher.model.LibraryEntry; // Sử dụng LibraryEntry để khớp với DTO
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +10,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
@@ -16,10 +19,12 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -28,11 +33,12 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.ResourceBundle;
 
 /**
  * Controller này quản lý màn hình chi tiết của một game.
  */
-public class GameDetailController {
+public class GameDetailController implements Initializable {
 
     // --- FXML Injections ---
     @FXML
@@ -55,13 +61,25 @@ public class GameDetailController {
     private Label playTimeLabel;
     @FXML
     private Label myReviewLabel;
+    @FXML
+    Label installStatusLabel;
+    @FXML
+    private ProgressIndicator installProgressBar;
+    @FXML
+    private VBox installProgressBox;
 
     // --- Dependencies & State ---
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private Game currentGame;
     private LibraryEntry currentLibraryEntry;
+    private GameManager gameManager;
     private LibraryController libraryController;
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        this.gameManager = new GameManager();
+    }
 
     public void setLibraryController(LibraryController libraryController) {
         this.libraryController = libraryController;
@@ -88,7 +106,7 @@ public class GameDetailController {
                 System.out.println("API Response: " + response.body());
 
                 if (response.statusCode() != 200) {
-                    throw new IOException("Lỗi khi gọi API: " + response.statusCode() + " - " + response.body());
+                    throw new IOException("Error call api " + response.statusCode() + " - " + response.body());
                 }
                 return objectMapper.readValue(response.body(), LibraryEntry.class);
             }
@@ -170,6 +188,11 @@ public class GameDetailController {
 
             lastPlayedLabel.setText(lastPlayedText);
         }
+        if (gameManager.isGameInstalled(currentGame)) {
+            playButton.setText("▶  PLAY");
+        } else {
+            playButton.setText("INSTALL");
+        }
     }
 
     @FXML
@@ -178,19 +201,23 @@ public class GameDetailController {
             System.err.println("Chưa có thông tin game để khởi chạy.");
             return;
         }
+        if ("INSTALL".equals(playButton.getText())) {
+            installGame();
+        } else if ("▶  PLAY".equals(playButton.getText())) {
 
-        String stubExecutablePath;
+            String stubExecutablePath;
 
-        if ("Yume Nikki".equals(currentGame.getName())) {
-            stubExecutablePath = "E:\\SteamLibrary\\steamapps\\common\\Yume Nikki\\yumenikki\\RPG_RT.exe";
-        } else {
-            stubExecutablePath = "C:\\Program Files (x86)\\Microsoft Games\\Age of Empires\\Empires.exe";
-        }
+            if ("Yume Nikki".equals(currentGame.getName())) {
+                stubExecutablePath = "E:\\SteamLibrary\\steamapps\\common\\Yume Nikki\\yumenikki\\RPG_RT.exe";
+            } else {
+                stubExecutablePath = "C:\\Program Files (x86)\\Microsoft Games\\Age of Empires\\Empires.exe";
+            }
 
-        try {
-            launchGame(stubExecutablePath, currentGame.getGameId());
-        } catch (IOException e) {
-            e.printStackTrace();
+            try {
+                launchGame(stubExecutablePath, currentGame.getGameId());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -232,6 +259,37 @@ public class GameDetailController {
             }
 
         });
+    }
+
+    private void installGame() {
+        playButton.setDisable(true);
+        installProgressBox.setVisible(true);
+        installProgressBox.setManaged(true);
+
+        Task<Void> installTask = gameManager.createInstallTask(currentGame);
+
+        installProgressBar.progressProperty().bind(installTask.progressProperty());
+        installStatusLabel.textProperty().bind(installTask.messageProperty());
+
+        installTask.setOnSucceeded(event -> {
+            Platform.runLater(() -> {
+                installProgressBar.progressProperty().unbind();
+                playButton.setText("▶  PLAY");
+                playButton.setDisable(false);
+                installProgressBox.setVisible(false);
+                installProgressBox.setManaged(false);
+            });
+        });
+
+        installTask.setOnFailed(event -> {
+            installTask.getException().printStackTrace();
+            Platform.runLater(() -> {
+                installStatusLabel.setText("Cài đặt thất bại!");
+                playButton.setDisable(false);
+            });
+        });
+
+        new Thread(installTask).start();
     }
 
 }
