@@ -1,6 +1,7 @@
 package com.centurionlauncher.controller;
 
 import com.centurionlauncher.auth.AuthContext;
+import com.centurionlauncher.manager.SceneManager;
 import com.centurionlauncher.model.Game;
 import com.centurionlauncher.model.GamePage;
 import com.centurionlauncher.model.LibraryEntry;
@@ -70,6 +71,12 @@ public class LibraryController implements Initializable {
     }
 
     @FXML
+    private void handleLogout() {
+        AuthContext.getInstance().clearAuthentication();
+        SceneManager.getInstance().switchToLogin();
+    }
+
+    @FXML
     void showGameGrid() {
         try {
             Parent gameGridView = FXMLLoader
@@ -93,6 +100,7 @@ public class LibraryController implements Initializable {
             e.printStackTrace();
         }
     }
+    
 
     private void loadLibraryData(int pageNumber) {
         gameGrid.getChildren().clear();

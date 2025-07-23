@@ -176,27 +176,29 @@ public class GameDetailController implements Initializable {
         playTimeLabel.setText(playtimeText);
         myReviewLabel.setText("You've played for " + playtimeText);
         LocalDateTime lastPlayedTime = libraryEntry.getlastTimePlayed();
-        if (LocalDateTime.now().compareTo(lastPlayedTime) > 0) {
-            Duration duration = Duration.between(lastPlayedTime, LocalDateTime.now());
-            String lastPlayedText;
+        if (lastPlayedTime != null) {
+            if (LocalDateTime.now().compareTo(lastPlayedTime) > 0) {
+                Duration duration = Duration.between(lastPlayedTime, LocalDateTime.now());
+                String lastPlayedText;
 
-            long days = duration.toDays();
-            long hours = duration.toHours() % 24;
-            long minutes = duration.toMinutes() % 60;
+                long days = duration.toDays();
+                long hours = duration.toHours() % 24;
+                long minutes = duration.toMinutes() % 60;
 
-            if (days > 30) {
-                lastPlayedText = "Last played: long time ago";
-            } else if (days > 0) {
-                lastPlayedText = String.format("Last played: %d days ago", days);
-            } else if (hours > 0) {
-                lastPlayedText = String.format("Last played: %d hours ago", hours);
-            } else if (minutes > 0) {
-                lastPlayedText = String.format("Last played: %d minutes ago", minutes);
-            } else {
-                lastPlayedText = "Last played: just now";
+                if (days > 30) {
+                    lastPlayedText = "Last played: long time ago";
+                } else if (days > 0) {
+                    lastPlayedText = String.format("Last played: %d days ago", days);
+                } else if (hours > 0) {
+                    lastPlayedText = String.format("Last played: %d hours ago", hours);
+                } else if (minutes > 0) {
+                    lastPlayedText = String.format("Last played: %d minutes ago", minutes);
+                } else {
+                    lastPlayedText = "Last played: just now";
+                }
+
+                lastPlayedLabel.setText(lastPlayedText);
             }
-
-            lastPlayedLabel.setText(lastPlayedText);
         }
         if (gameManager.isGameInstalled(currentGame)) {
             playButton.setText("▶  PLAY");
@@ -228,15 +230,23 @@ public class GameDetailController implements Initializable {
         if (currentGame == null)
             return;
 
-        Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmationAlert.setTitle("Confirm Uninstall?");
-        confirmationAlert.setHeaderText("Are you sure you want to uninstall " + currentGame.getName() + "?");
-        confirmationAlert.setContentText("All of your progress will be lost.");
-        Optional<ButtonType> result = confirmationAlert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            gameManager.uninstallGame(currentGame);
-            playButton.setText("INSTALL");
-            uninstallButton.setDisable(true);
+        if (gameManager.isGameInstalled(currentGame) == false) {
+            Alert confirmationAlert = new Alert(Alert.AlertType.ERROR);
+            confirmationAlert.setTitle("Game is not installed.");
+            confirmationAlert.setHeaderText("The game is not installed.");
+            confirmationAlert.setContentText("Cannot uninstalling.");
+            confirmationAlert.showAndWait();
+        } else {
+            Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmationAlert.setTitle("Confirm Uninstall?");
+            confirmationAlert.setHeaderText("Are you sure you want to uninstall " + currentGame.getName() + "?");
+            confirmationAlert.setContentText("All of your progress will be lost.");
+            Optional<ButtonType> result = confirmationAlert.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                gameManager.uninstallGame(currentGame);
+                playButton.setText("INSTALL");
+                uninstallButton.setDisable(true);
+            }
         }
     }
 

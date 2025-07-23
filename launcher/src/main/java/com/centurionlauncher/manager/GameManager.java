@@ -50,17 +50,25 @@ public class GameManager {
                 .trim()
                 .toLowerCase()
                 .replaceAll("\\s+", "_");
-        return gamesBaseDirectory.resolve(snakeCaseName).resolve(snakeCaseName);
+        return gamesBaseDirectory.resolve(snakeCaseName);
     }
 
     public Path getExecutablePath(Game game) {
-        return getGameInstallationPath(game).resolve("launch.exe");
+        String snakeCaseName = game.getName()
+                .trim()
+                .toLowerCase()
+                .replaceAll("\\s+", "_");
+        return gamesBaseDirectory
+                .resolve(snakeCaseName)
+                .resolve(snakeCaseName)
+                .resolve("launch.exe");
     }
 
     public boolean isGameInstalled(Game game) {
+        System.out.println("AAAAAAAAAAAAAAAAAAA");
         System.out.println("Checking if game is installed: " + game.getName());
-        System.out.println("Game path: " + getExecutablePath(game));
-        System.out.println(Files.exists(getExecutablePath(game)));
+        System.out.println("Game path: " + getExecutablePath(game).toAbsolutePath());
+        System.out.println("Exists: " + Files.exists(getExecutablePath(game)));
         return Files.exists(getExecutablePath(game));
     }
 
