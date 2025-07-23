@@ -8,14 +8,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class LibraryEntry {
     private Game gameDetail;
     private long playtimeInMillis;
-    private LocalDateTime lastPlayedTime;
+    private LocalDateTime lastTimePlayed;
 
-    public LocalDateTime getLastPlayedTime() {
-        return lastPlayedTime;
+    public LocalDateTime getlastTimePlayed() {
+        return lastTimePlayed;
     }
 
-    public void setLastPlayedTime(LocalDateTime lastPlayedTime) {
-        this.lastPlayedTime = lastPlayedTime;
+    public void setlastTimePlayed(LocalDateTime lastTimePlayed) {
+        this.lastTimePlayed = lastTimePlayed;
     }
 
     public Game getGameDetail() {

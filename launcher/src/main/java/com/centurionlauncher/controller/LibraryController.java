@@ -5,6 +5,8 @@ import com.centurionlauncher.model.Game;
 import com.centurionlauncher.model.GamePage;
 import com.centurionlauncher.model.LibraryEntry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -48,7 +50,7 @@ public class LibraryController implements Initializable {
     private Pagination pagination; // Component được include từ gamegrid-view.fxml
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -159,7 +161,7 @@ public class LibraryController implements Initializable {
             Parent view = loader.load();
 
             GameDetailController controller = loader.getController();
-            controller.loadGameDetails(gameId); 
+            controller.loadGameDetails(gameId);
 
             mainPane.setCenter(view);
 
@@ -181,8 +183,12 @@ public class LibraryController implements Initializable {
         coverImage.setFitWidth(150);
         coverImage.setPreserveRatio(true);
         String imageUrl = game.getHeaderImageUrl();
+
         if (imageUrl != null && !imageUrl.isEmpty()) {
             coverImage.setImage(new Image(imageUrl, true));
+        } else {
+            coverImage
+                    .setImage(new Image("https://upload.wikimedia.org/wikipedia/commons/7/75/No_image_available.png"));
         }
 
         Label title = new Label(game.getName());
@@ -197,8 +203,6 @@ public class LibraryController implements Initializable {
         card.getStyleClass().add("game-card");
         card.setCursor(Cursor.HAND);
 
-        // ✅ SỬA LẠI SỰ KIỆN CLICK: Gọi trực tiếp phương thức showGameDetail của lớp
-        // này.
         card.setOnMouseClicked(event -> {
             System.out.println("Clicked on game ID: " + game.getGameId());
             showGameDetail(game.getGameId());

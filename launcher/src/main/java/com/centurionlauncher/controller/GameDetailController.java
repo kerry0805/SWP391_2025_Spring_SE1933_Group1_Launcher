@@ -4,6 +4,8 @@ import com.centurionlauncher.auth.AuthContext;
 import com.centurionlauncher.model.Game;
 import com.centurionlauncher.model.LibraryEntry; // Sử dụng LibraryEntry để khớp với DTO
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -23,6 +25,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -54,7 +58,7 @@ public class GameDetailController {
 
     // --- Dependencies & State ---
     private final HttpClient httpClient = HttpClient.newHttpClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private Game currentGame;
     private LibraryEntry currentLibraryEntry;
     private LibraryController libraryController;
@@ -70,7 +74,6 @@ public class GameDetailController {
         Task<LibraryEntry> fetchGameTask = new Task<>() {
             @Override
             protected LibraryEntry call() throws Exception {
-                // ✅ SỬA LỖI: Xây dựng đúng URL với cả userId và gameId
                 Long userId = AuthContext.getInstance().getUserId();
                 if (userId == null) {
                     throw new IllegalStateException("User ID is not available in AuthContext.");
@@ -100,10 +103,11 @@ public class GameDetailController {
             fetchGameTask.getException().printStackTrace();
             Platform.runLater(() -> {
                 loadingIndicator.setVisible(false);
-                rootPane.getChildren().add(new Label("Error fetch game task: " + fetchGameTask.getException().getMessage()));
+                rootPane.getChildren()
+                        .add(new Label("Error fetch game task: " + fetchGameTask.getException().getMessage()));
             });
         });
-        
+
         new Thread(fetchGameTask).start();
     }
 
@@ -119,8 +123,7 @@ public class GameDetailController {
     private void updateUI(LibraryEntry libraryEntry) {
         this.currentLibraryEntry = libraryEntry;
         this.currentGame = libraryEntry.getGameDetail();
-        rootPane.getChildren().add(new Label("Game URL: " + currentGame.getGameUrl()));
-        
+
         if (this.currentGame == null) {
             loadingIndicator.setVisible(false);
             rootPane.getChildren().add(new Label("Invalid data"));
@@ -138,11 +141,35 @@ public class GameDetailController {
             gameHeaderImageView.setImage(new Image(imageUrl, true));
         }
         long playtimeMillis = libraryEntry.getPlaytimeInMillis();
-        long hours = playtimeMillis / 3_600_000;
-        long minutes = (playtimeMillis % 3_600_000) / 60_000;
-        String playtimeText = String.format("%d hours %d minutes", hours, minutes);
+        long hour = playtimeMillis / 3_600_000;
+        long minute = (playtimeMillis % 3_600_000) / 60_000;
+        String playtimeText = String.format("%d hours %d minutes", hour, minute);
+
         playTimeLabel.setText(playtimeText);
         myReviewLabel.setText("You've played for " + playtimeText);
+        LocalDateTime lastPlayedTime = libraryEntry.getlastTimePlayed();
+        if (LocalDateTime.now().compareTo(lastPlayedTime) > 0) {
+            Duration duration = Duration.between(lastPlayedTime, LocalDateTime.now());
+            String lastPlayedText;
+
+            long days = duration.toDays();
+            long hours = duration.toHours() % 24;
+            long minutes = duration.toMinutes() % 60;
+
+            if (days > 30) {
+                lastPlayedText = "Last played: long time ago";
+            } else if (days > 0) {
+                lastPlayedText = String.format("Last played: %d days ago", days);
+            } else if (hours > 0) {
+                lastPlayedText = String.format("Last played: %d hours ago", hours);
+            } else if (minutes > 0) {
+                lastPlayedText = String.format("Last played: %d minutes ago", minutes);
+            } else {
+                lastPlayedText = "Last played: just now";
+            }
+
+            lastPlayedLabel.setText(lastPlayedText);
+        }
     }
 
     @FXML
@@ -161,13 +188,29 @@ public class GameDetailController {
         }
 
         try {
-            launchGame(stubExecutablePath);
+            launchGame(stubExecutablePath, currentGame.getGameId());
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void launchGame(String executablePath) throws IOException {
+    private void updatePlaytimeInLibrary(long playtimeMillis, long gameId) throws IOException, InterruptedException {
+        String apiUrl = String.format("http://localhost:8080/user/library/%d/playtime", gameId);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUrl))
+                .header("Authorization", "Bearer " + AuthContext.getInstance().getToken())
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(String.valueOf(playtimeMillis)))
+                .build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            System.out.println("Failed to update playtime: " + response.body());
+            return;
+        }
+
+    }
+
+    private void launchGame(String executablePath, long gameId) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(executablePath);
         File gameDirectory = new File(executablePath).getParentFile();
         if (gameDirectory != null && gameDirectory.exists()) {
@@ -179,17 +222,16 @@ public class GameDetailController {
             Instant endTime = Instant.now();
             Duration duration = Duration.between(startTime, endTime);
             long playtimeMillis = duration.toMillis();
-            System.out.println("Game closed. Thời gian chơi: " + playtimeMillis + " ms.");
-            updatePlaytimeOnServer(playtimeMillis);
-            updateLastTimePlayed(Date.from(endTime));
+            System.out.println("Game closed. Time played: " + playtimeMillis + " ms.");
+            try {
+                updatePlaytimeInLibrary(playtimeMillis, gameId);
+                System.out.println("Api reach successfully.");
+            } catch (IOException | InterruptedException e) {
+                System.out.println("deo dc");
+                e.printStackTrace();
+            }
+
         });
     }
 
-    private void updatePlaytimeOnServer(long playtimeMillis) {
-
-    }
-
-    private void updateLastTimePlayed(Date lastTimePlayed) {
-
-    }
 }

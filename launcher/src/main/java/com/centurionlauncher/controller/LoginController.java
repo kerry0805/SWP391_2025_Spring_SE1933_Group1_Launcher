@@ -60,7 +60,7 @@ public class LoginController {
 
             // 2. Tạo yêu cầu HTTP POST
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/api/auth/login")) // URL đến API Spring Boot
+                    .uri(URI.create("http://localhost:8080/api/auth/login")) 
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonRequestBody))
                     .build();
