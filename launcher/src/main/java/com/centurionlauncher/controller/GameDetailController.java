@@ -182,7 +182,7 @@ public class GameDetailController implements Initializable {
         fetchGameTask.setOnSucceeded(event -> {
             LibraryEntry fetchedEntry = fetchGameTask.getValue();
             fetchedEntry.setIsPlayable(fetchGameTask.getValue().getIsPlayable());
-            System.out.println(fetchedEntry.getGameDetail());
+            System.out.println("GAMEdetail" + fetchedEntry.getGameDetail());
             System.out.println("choi dc k" + fetchedEntry.getIsPlayable());
             Platform.runLater(() -> updateUI(fetchedEntry));
         });
@@ -264,7 +264,7 @@ public class GameDetailController implements Initializable {
         if (ProcessManager.isProcessRunning(currentGame.getGameId())) {
             playButton.setText("RUNNING");
             playButton.setDisable(true);
-        } else if (!libraryEntry.getIsPlayable()) {
+        } else if (!libraryEntry.getIsPlayable() && libraryController.isSharedGame(currentGame.getGameId())) {
             playButton.setText("PURCHASE");
             playButton.setDisable(true);
         } else if (gameManager.isGameInstalled(currentGame)) {

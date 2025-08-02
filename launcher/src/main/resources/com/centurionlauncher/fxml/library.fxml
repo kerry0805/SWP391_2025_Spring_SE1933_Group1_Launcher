@@ -52,7 +52,7 @@
             </Label>
             <Button mnemonicParsing="false" onAction="#showGameGrid" prefWidth="180.0" text="All Games" />
             <VBox prefHeight="0.0" prefWidth="180.0" />
-            <Button mnemonicParsing="false" prefWidth="180.0" text="Recently Played" />
+            <Button mnemonicParsing="false" prefWidth="180.0" onAction="#showRecentlyPlayed" text="Recently Played" />
             <VBox prefHeight="1.0" prefWidth="180.0" />
             <Button onAction="#showSharedLibrary" mnemonicParsing="false" prefWidth="180.0" text="Shared Library" />
             <VBox prefHeight="1.0" prefWidth="180.0" />
