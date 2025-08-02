@@ -54,6 +54,8 @@
             <VBox prefHeight="0.0" prefWidth="180.0" />
             <Button mnemonicParsing="false" prefWidth="180.0" text="Recently Played" />
             <VBox prefHeight="1.0" prefWidth="180.0" />
+            <Button onAction="#showSharedLibrary" mnemonicParsing="false" prefWidth="180.0" text="Shared Library" />
+            <VBox prefHeight="1.0" prefWidth="180.0" />
          </children>
          <padding>
             <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
@@ -64,6 +66,18 @@
    <center>
       <VBox spacing="15.0" style="-fx-background-color: #000000;">
          <children>
+            <HBox fx:id="familyInfoBox" alignment="CENTER_LEFT" managed="false" spacing="10.0" styleClass="family-info-box" visible="false">
+               <children>
+                  <ImageView fx:id="familyAvatarImageView" fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true" />
+                  <VBox>
+                     <children>
+                        <Label fx:id="familyNameLabel" styleClass="family-name-label" text="Family Name" />
+                        <Label fx:id="familyPlanLabel" styleClass="family-detail-label" text="Current plan: null" />
+                        <Label fx:id="familyExpiryLabel" styleClass="family-detail-label" text="Plan end at: null" />
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
             <TilePane fx:id="gameGrid" hgap="20.0" stylesheets="@../styles/stylelib.css" vgap="20.0" VBox.vgrow="ALWAYS" xmlns:fx="http://javafx.com/fxml/1" />
             
             <HBox alignment="CENTER">

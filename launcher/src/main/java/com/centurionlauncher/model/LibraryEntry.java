@@ -9,6 +9,7 @@ public class LibraryEntry {
     private Game gameDetail;
     private long playtimeInMillis;
     private LocalDateTime lastTimePlayed;
+    private boolean isPlayable;
 
     public LocalDateTime getlastTimePlayed() {
         return lastTimePlayed;
@@ -29,5 +30,12 @@ public class LibraryEntry {
 
     public long getPlaytimeInMillis() {
         return playtimeInMillis;
+    }
+    public boolean getIsPlayable() {
+        return isPlayable;
+    }
+
+    public void setIsPlayable(boolean isPlayable) {
+        this.isPlayable = isPlayable;
     }
 }

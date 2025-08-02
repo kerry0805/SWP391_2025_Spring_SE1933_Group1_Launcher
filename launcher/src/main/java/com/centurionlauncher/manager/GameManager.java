@@ -1,6 +1,7 @@
 package com.centurionlauncher.manager;
 
 import com.centurionlauncher.auth.AuthContext;
+import com.centurionlauncher.dto.FamilyGameDTO;
 import com.centurionlauncher.model.Game;
 import javafx.concurrent.Task;
 
@@ -65,11 +66,18 @@ public class GameManager {
     }
 
     public boolean isGameInstalled(Game game) {
-        System.out.println("AAAAAAAAAAAAAAAAAAA");
         System.out.println("Checking if game is installed: " + game.getName());
         System.out.println("Game path: " + getExecutablePath(game).toAbsolutePath());
         System.out.println("Exists: " + Files.exists(getExecutablePath(game)));
         return Files.exists(getExecutablePath(game));
+    }
+
+    public boolean isGameRunning(Game game) {
+        return ProcessManager.isProcessRunning(game.getGameId());
+    }
+
+    public boolean isGamePlayable(FamilyGameDTO game) {
+        return game.getIsPlayable();
     }
 
     public boolean uninstallGame(Game game) {
@@ -102,7 +110,7 @@ public class GameManager {
                 }
 
                 String apiUrl = String.format(
-                        "https://swp3912025springse1933group1backend-production.up.railway.app/request/file/download/%s",
+                        "http://localhost:8080/request/file/download/%s",
                         fileId);
                 System.out.println(apiUrl);
 

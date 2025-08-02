@@ -1,10 +1,15 @@
 package com.centurionlauncher.controller;
 
 import com.centurionlauncher.auth.AuthContext;
+import com.centurionlauncher.dto.ApiRespDTO;
+import com.centurionlauncher.dto.FamilyGameDTO;
+import com.centurionlauncher.dto.FamilyInfoDTO;
+import com.centurionlauncher.dto.FamilyMemberDTO;
 import com.centurionlauncher.manager.SceneManager;
 import com.centurionlauncher.model.Game;
 import com.centurionlauncher.model.GamePage;
 import com.centurionlauncher.model.LibraryEntry;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -21,6 +26,7 @@ import javafx.scene.control.Pagination;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -31,6 +37,8 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -47,6 +55,16 @@ public class LibraryController implements Initializable {
     private TilePane gameGrid;
     @FXML
     private Pagination pagination;
+    @FXML
+    private HBox familyInfoBox;
+    @FXML
+    private ImageView familyAvatarImageView;
+    @FXML
+    private Label familyNameLabel;
+    @FXML
+    private Label familyPlanLabel;
+    @FXML
+    private Label familyExpiryLabel;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -77,7 +95,115 @@ public class LibraryController implements Initializable {
     }
 
     @FXML
+    void showSharedLibrary() {
+        familyInfoBox.setVisible(true);
+        familyInfoBox.setManaged(true);
+        try {
+            Parent gameGridView = FXMLLoader
+                    .load(getClass().getResource("/com/centurionlauncher/fxml/gamegrid-view.fxml"));
+
+            this.gameGrid = (TilePane) gameGridView.lookup("#gameGrid");
+
+            if (this.gameGrid == null || this.pagination == null) {
+                System.err.println("no game grid or pagination in gamegrid-view.fxml");
+                return;
+            }
+
+            mainPane.setCenter(gameGridView);
+            loadSharedLibraryData();
+        } catch (IOException e) {
+            System.err.println("error reloading gamegrid-view.fxml");
+            e.printStackTrace();
+        }
+    }
+
+    private void loadSharedLibraryData() {
+        gameGrid.getChildren().clear();
+        pagination.setVisible(false);
+        String apiUrl = "http://localhost:8080/api/family";
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUrl))
+                .header("Authorization", "Bearer " + AuthContext.getInstance().getToken())
+                .build();
+
+        httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(this::processSharedLibraryResponse)
+                .exceptionally(error -> {
+                    error.printStackTrace();
+                    Platform.runLater(() -> showError("Lỗi kết nối khi tải thư viện chia sẻ."));
+                    return null;
+                });
+    }
+
+    private void processSharedLibraryResponse(HttpResponse<String> response) {
+        if (response.statusCode() == 200) {
+            try {
+                TypeReference<ApiRespDTO<FamilyInfoDTO>> typeRef = new TypeReference<>() {
+                };
+                ApiRespDTO<FamilyInfoDTO> apiResponse = objectMapper.readValue(response.body(), typeRef);
+
+                if (apiResponse.isSuccess() && apiResponse.getData() != null) {
+                    Platform.runLater(() -> {
+                        FamilyInfoDTO familyInfo = apiResponse.getData();
+                        updateFamilyUI(familyInfo);
+                        gameGrid.getChildren().clear();
+                        for (FamilyGameDTO sharedGame : apiResponse.getData().getGames()) {
+                            Game game = sharedGame.getGameDetail();
+                            if (sharedGame != null) {
+                                Node gameCard = createGameCard(game);
+                                gameGrid.getChildren().add(gameCard);
+                            }
+                        }
+                    });
+                } else {
+                    Platform.runLater(() -> showError(apiResponse.getMessage()));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                Platform.runLater(() -> showError("Lỗi phân tích dữ liệu thư viện chia sẻ."));
+            }
+        } else {
+            Platform.runLater(() -> showError("Lỗi server (Code: " + response.statusCode() + ")"));
+        }
+    }
+
+    private void updateFamilyUI(FamilyInfoDTO familyInfo) {
+        if (familyInfo.getFamilyId() != null && familyInfo.getFamilyId() > 0) {
+            Optional<FamilyMemberDTO> ownerOpt = familyInfo.getMembers().stream()
+                    .filter(member -> member.getIsOwner())
+                    .findFirst();
+
+            if (ownerOpt.isPresent()) {
+                FamilyMemberDTO owner = ownerOpt.get();
+                familyNameLabel.setText(owner.getName() + "'s Family");
+                if (owner.getAvatar() != null && !owner.getAvatar().isEmpty()) {
+                    familyAvatarImageView.setImage(new Image(owner.getAvatar()));
+                } else {
+                    familyAvatarImageView.setImage(new Image("https://placehold.co/50x50/2a2e33/E0E0E0?text=F"));
+                }
+            }
+
+            if (familyInfo.getSubscriptionPlan() != null) {
+                familyPlanLabel.setText("Current plan: " + familyInfo.getSubscriptionPlan().getPlanName());
+                familyExpiryLabel
+                        .setText("Plan end at: " + familyInfo.getExpDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            } else {
+                familyPlanLabel.setText("No active plan");
+                familyExpiryLabel.setText("");
+            }
+
+            familyInfoBox.setVisible(true);
+            familyInfoBox.setManaged(true);
+        } else {
+            // Nếu người dùng không thuộc family nào, hiển thị thông báo
+            showError("Bạn không phải là thành viên của bất kỳ gia đình nào.");
+        }
+    }
+
+    @FXML
     void showGameGrid() {
+        familyInfoBox.setVisible(false);
+        familyInfoBox.setManaged(false);
         try {
             Parent gameGridView = FXMLLoader
                     .load(getClass().getResource("/com/centurionlauncher/fxml/gamegrid-view.fxml"));
@@ -100,13 +226,12 @@ public class LibraryController implements Initializable {
             e.printStackTrace();
         }
     }
-    
 
     private void loadLibraryData(int pageNumber) {
         gameGrid.getChildren().clear();
 
         String apiUrl = String.format(
-                "https://swp3912025springse1933group1backend-production.up.railway.app/user/library?page=%d&size=12",
+                "http://localhost:8080/user/library?page=%d&size=12",
                 pageNumber);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -156,8 +281,9 @@ public class LibraryController implements Initializable {
     }
 
     /**
-     *
-     * @param gameId
+     * Shows the game detail view for a given game ID
+     * 
+     * @param gameId ID of the game to display details for
      */
     public void showGameDetail(long gameId) {
         try {
@@ -166,7 +292,13 @@ public class LibraryController implements Initializable {
             Parent view = loader.load();
 
             GameDetailController controller = loader.getController();
-            controller.loadGameDetails(gameId);
+
+            // Check if game is from shared library
+            if (isSharedGame(gameId)) {
+                controller.loadSharedGameDetails(gameId);
+            } else {
+                controller.loadGameDetails(gameId);
+            }
 
             mainPane.setCenter(view);
 
@@ -174,6 +306,35 @@ public class LibraryController implements Initializable {
             System.err.println("Error loading gamedetail-view.fxml");
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Checks if a game ID belongs to the shared library
+     * 
+     * @param gameId ID to check
+     * @return true if game is from shared library, false otherwise
+     */
+    private boolean isSharedGame(long gameId) {
+        String apiUrl = "http://localhost:8080/user/library/contain/" + gameId;
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUrl))
+                .header("Authorization", "Bearer " + AuthContext.getInstance().getToken())
+                .build();
+
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                System.out.println("is shared game: " + response.body());
+                return !Boolean.parseBoolean(response.body());
+            }
+
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     private void showError(String message) {

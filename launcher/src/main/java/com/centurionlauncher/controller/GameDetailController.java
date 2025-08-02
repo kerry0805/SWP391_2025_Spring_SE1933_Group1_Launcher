@@ -1,7 +1,9 @@
 package com.centurionlauncher.controller;
 
 import com.centurionlauncher.auth.AuthContext;
+import com.centurionlauncher.dto.FamilyGameDTO;
 import com.centurionlauncher.manager.GameManager;
+import com.centurionlauncher.manager.ProcessManager;
 import com.centurionlauncher.model.Game;
 import com.centurionlauncher.model.LibraryEntry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,7 +37,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -76,6 +80,8 @@ public class GameDetailController implements Initializable {
     @FXML
     private Button uninstallButton;
 
+    private ProcessManager processManager;
+
     // --- Dependencies & State ---
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -87,6 +93,11 @@ public class GameDetailController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         this.gameManager = new GameManager();
+        this.processManager = new ProcessManager();
+    }
+
+    public static GameDetailController getInstance() {
+        return new GameDetailController();
     }
 
     public void setLibraryController(LibraryController libraryController) {
@@ -105,7 +116,7 @@ public class GameDetailController implements Initializable {
                     throw new IllegalStateException("User ID is not available in AuthContext.");
                 }
                 String apiUrl = String.format(
-                        "https://swp3912025springse1933group1backend-production.up.railway.app/user/library/%d/%d",
+                        "http://localhost:8080/user/library/%d/%d",
                         userId, gameId);
 
                 HttpRequest request = HttpRequest.newBuilder()
@@ -124,6 +135,55 @@ public class GameDetailController implements Initializable {
 
         fetchGameTask.setOnSucceeded(event -> {
             LibraryEntry fetchedEntry = fetchGameTask.getValue();
+            Platform.runLater(() -> updateUI(fetchedEntry));
+        });
+
+        fetchGameTask.setOnFailed(event -> {
+            fetchGameTask.getException().printStackTrace();
+            Platform.runLater(() -> {
+                loadingIndicator.setVisible(false);
+                rootPane.getChildren()
+                        .add(new Label("Error fetch game task: " + fetchGameTask.getException().getMessage()));
+            });
+        });
+
+        new Thread(fetchGameTask).start();
+    }
+
+    public void loadSharedGameDetails(long gameId) {
+        loadingIndicator.setVisible(true);
+        mainContentPane.setVisible(false);
+
+        Task<FamilyGameDTO> fetchGameTask = new Task<>() {
+            @Override
+            protected FamilyGameDTO call() throws Exception {
+                Long userId = AuthContext.getInstance().getUserId();
+                if (userId == null) {
+                    throw new IllegalStateException("User ID is not available in AuthContext.");
+                }
+                String apiUrl = String.format(
+                        "http://localhost:8080/api/family/library/%d",
+                        gameId);
+
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(apiUrl))
+                        .header("Authorization", "Bearer " + AuthContext.getInstance().getToken())
+                        .build();
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                System.out.println("API Response: " + response.body());
+
+                if (response.statusCode() != 200) {
+                    throw new IOException("Error call api " + response.statusCode() + " - " + response.body());
+                }
+                return objectMapper.readValue(response.body(), FamilyGameDTO.class);
+            }
+        };
+
+        fetchGameTask.setOnSucceeded(event -> {
+            LibraryEntry fetchedEntry = fetchGameTask.getValue();
+            fetchedEntry.setIsPlayable(fetchGameTask.getValue().getIsPlayable());
+            System.out.println(fetchedEntry.getGameDetail());
+            System.out.println("choi dc k" + fetchedEntry.getIsPlayable());
             Platform.runLater(() -> updateUI(fetchedEntry));
         });
 
@@ -200,10 +260,19 @@ public class GameDetailController implements Initializable {
                 lastPlayedLabel.setText(lastPlayedText);
             }
         }
-        if (gameManager.isGameInstalled(currentGame)) {
+        playButton.setDisable(false);
+        if (ProcessManager.isProcessRunning(currentGame.getGameId())) {
+            playButton.setText("RUNNING");
+            playButton.setDisable(true);
+        } else if (!libraryEntry.getIsPlayable()) {
+            playButton.setText("PURCHASE");
+            playButton.setDisable(true);
+        } else if (gameManager.isGameInstalled(currentGame)) {
             playButton.setText("▶  PLAY");
+            uninstallButton.setDisable(false);
         } else {
             playButton.setText("INSTALL");
+            uninstallButton.setDisable(true);
         }
     }
 
@@ -252,7 +321,7 @@ public class GameDetailController implements Initializable {
 
     private void updatePlaytimeInLibrary(long playtimeMillis, long gameId) throws IOException, InterruptedException {
         String apiUrl = String.format(
-                "https://swp3912025springse1933group1backend-production.up.railway.app/user/library/%d/playtime",
+                "http://localhost:8080/user/library/%d/playtime",
                 gameId);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl))
@@ -276,6 +345,10 @@ public class GameDetailController implements Initializable {
         }
         Instant startTime = Instant.now();
         Process process = pb.start();
+
+        // dang ki process
+        ProcessManager.registerProcess(process, gameId);
+
         process.onExit().thenAccept(exitedProcess -> {
             Instant endTime = Instant.now();
             Duration duration = Duration.between(startTime, endTime);

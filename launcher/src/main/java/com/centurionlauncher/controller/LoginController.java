@@ -56,7 +56,7 @@ public class LoginController {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(
-                            "https://swp3912025springse1933group1backend-production.up.railway.app/api/auth/login"))
+                            "http://localhost:8080/api/auth/login"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonRequestBody))
                     .build();
